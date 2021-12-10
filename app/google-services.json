@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "513407727961",
+    "project_id": "pelaporan-kendaraan",
+    "storage_bucket": "pelaporan-kendaraan.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:513407727961:android:4e0fca84af0bc46d227448",
+        "android_client_info": {
+          "package_name": "com.wahida.pelaporankendaraan"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "513407727961-fji106dksiv1nbj9rgf49l6guha5r4p1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzb3aPTB1e7D5KzoVTpzNflqJM26cpNCc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "513407727961-fji106dksiv1nbj9rgf49l6guha5r4p1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Pelaporan Kendaraan</string>
+    <string name="home">Home</string>
+    <string name="add_laporan">Laporan</string>
+    <string name="profile">Profile</string>
+    <string name="mapbox_access_token">pk.eyJ1IjoiYWRpbXVyZGF5YW5pIiwiYSI6ImNrcmdyNG9oazBrOTIydnFuc21kYW53YjIifQ.kKTX_r3f99B-LTG5XKmUHA</string>
+    <string name="kirim">Kirim</string>
+
+    <string-array name="kelamin">
+        <item>Perempuan</item>
+        <item>Laki-Laki</item>
+    </string-array>
+</resources>

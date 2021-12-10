@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:shimmer="http://schemas.android.com/apk/res-auto"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/top_account_layout"
+        android:layout_width="199dp"
+        android:layout_height="42dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="30dp"
+        android:layout_marginBottom="24dp"
+        android:orientation="vertical"
+        app:cardCornerRadius="120dp"
+        app:cardElevation="6dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="0.9dp"
+            android:background="@drawable/bg_account"
+            android:fitsSystemWindows="false"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
+                android:clickable="true"
+                android:fitsSystemWindows="true"
+                android:src="@drawable/user_circle"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/nama"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:fontFamily="@font/millard_medium"
+                android:textColor="@color/white"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <ImageView
+        android:id="@+id/btn_profile"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="30dp"
+        android:layout_marginEnd="16dp"
+        android:clickable="true"
+        android:elevation="5dp"
+        android:focusable="true"
+        android:src="@drawable/ic_menu" />
+
+    <TextView
+        android:id="@+id/txt_judul"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/top_account_layout"
+        android:layout_marginStart="16dp"
+        android:fontFamily="@font/millard_medium"
+        android:text="Laporan Baru"
+        android:textColor="@color/black"
+        android:textSize="24dp" />
+
+    <LinearLayout
+        android:id="@+id/div_top"
+        android:layout_below="@id/txt_judul"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:id="@+id/txt_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_gravity="center_vertical"
+            android:background="@drawable/bg_time"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tanggal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/millard_medium"
+                android:text="Hari ini"
+                android:textColor="@color/black"
+                android:textSize="10sp"
+                tools:ignore="SmallSp" />
+        </LinearLayout>
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            app:cardCornerRadius="120dp"
+            app:cardElevation="6dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <SearchView
+                    android:id="@+id/searchData"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:queryHint="Search data" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+    </LinearLayout>
+
+    <com.facebook.shimmer.ShimmerFrameLayout
+        android:id="@+id/shimmer_layout_laporan_baru"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/div_top"
+        android:layout_margin="16dp"
+        shimmer:duration="800">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <include layout="@layout/list_data_shimmer" />
+
+            <include layout="@layout/list_data_shimmer" />
+
+            <include layout="@layout/list_data_shimmer" />
+
+            <include layout="@layout/list_data_shimmer" />
+
+            <include layout="@layout/list_data_shimmer" />
+
+            <include layout="@layout/list_data_shimmer" />
+
+            <include layout="@layout/list_data_shimmer" />
+        </LinearLayout>
+
+    </com.facebook.shimmer.ShimmerFrameLayout>
+
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/sw_data_laporan_baru"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/div_top"
+        android:layout_margin="16dp">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rc_data_laporan_baru"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:listitem="@layout/list_data_laporan" />
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+</RelativeLayout>
