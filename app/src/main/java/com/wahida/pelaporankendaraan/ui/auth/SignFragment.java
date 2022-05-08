@@ -11,6 +11,7 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -45,7 +46,7 @@ public class SignFragment extends Fragment {
     private View view;
     private TextView txt_signup;
     private TextInputEditText txt_username, txt_password;
-    private CardView btn_signin;
+    private LinearLayout btn_signin;
     private TextInputLayout l_username, l_password;
     FragmentManager fragmentManager;
     private ProgressDialog dialog;
@@ -105,11 +106,11 @@ public class SignFragment extends Fragment {
                     JSONObject data = object.getJSONObject("data");
                     session_data = getContext().getSharedPreferences("user", Context.MODE_PRIVATE);
                     editor = session_data.edit();
-                    editor.putString("token", object.getString("token"));
                     editor.putInt("id", data.getInt("id"));
                     editor.putString("nama", data.getString("nama"));
                     editor.putString("username", data.getString("username"));
                     editor.putString("email", data.getString("email"));
+                    editor.putString("image", data.getString("image"));
                     editor.putInt("user_ID", data.getInt("user_id"));
                     editor.putBoolean("isLoggedIn", true);
                     editor.apply();

@@ -27,6 +27,10 @@ import com.android.volley.toolbox.Volley;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.annotations.MarkerOptions;
+import com.mapbox.mapboxsdk.camera.CameraPosition;
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
+import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
@@ -55,6 +59,7 @@ public class DetailLaporan extends AppCompatActivity implements PermissionsListe
     private MapboxMap mapboxMap;
     private PermissionsManager permissionsManager;
     private ImageView hoveringMarker;
+    public double latitude, longitude;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,20 +87,23 @@ public class DetailLaporan extends AppCompatActivity implements PermissionsListe
         });
     }
 
-    @SuppressLint( "SetTextI18n" )
+    @SuppressLint("SetTextI18n")
     private void getDataLaporan() {
         getData = new StringRequest(Request.Method.GET, APIUrl.GET_LAPORAN_ID + id, response -> {
             try {
                 JSONObject object = new JSONObject(response);
                 if (object.getBoolean("status")) {
                     JSONObject data = object.getJSONObject("data");
-                    nama.setText(": " + data.getString("nama_pelapor"));
+                    nama.setText(": " + data.getString("nama"));
                     no_ktp.setText(": " + data.getString("no_ktp"));
                     no_kk.setText(": " + data.getString("no_kk"));
                     alamat.setText(": Kelurahan " + data.getString("kelurahan") + ", Kecamatan " + data.getString("kecamatan"));
                     Picasso.get()
                             .load(UrlImage.BASE_URL_IMAGE + data.getString("stnk"))
                             .into(img_stnk);
+                    Log.d("Response", "Latitude " + data.getString("latitude") + " Longitude " + data.getString("longitude"));
+                    latitude = Double.parseDouble(data.getString("latitude"));
+                    longitude = Double.parseDouble(data.getString("longitude"));
                 } else {
                     koneksiError(object.getString("message"));
                 }
@@ -146,16 +154,19 @@ public class DetailLaporan extends AppCompatActivity implements PermissionsListe
         mapboxMap.setStyle(Style.MAPBOX_STREETS, new Style.OnStyleLoaded() {
             @Override
             public void onStyleLoaded(@NonNull Style style) {
-//                enableLocationPlugin(style);
-                hoveringMarker = new ImageView(getApplication());
-                hoveringMarker.setImageResource(R.drawable.ic_marker);
-                FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER
-                );
+                CameraPosition position = new CameraPosition.Builder()
+                        .target(new LatLng(latitude, longitude))
+                        .zoom(14) // Sets the zoom
+                        .bearing(180) // Rotate the camera
+                        .tilt(30) // Set the camera tilt
+                        .build();
 
-                hoveringMarker.setLayoutParams(params);
-                mapView.addView(hoveringMarker);
+                mapboxMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(latitude, longitude))
+                        .title("Lokasi kehilangan kendaraan!"));
+
+                mapboxMap.animateCamera(CameraUpdateFactory
+                        .newCameraPosition(position), 7000);
             }
         });
     }
@@ -187,7 +198,7 @@ public class DetailLaporan extends AppCompatActivity implements PermissionsListe
     }
 
     @Override
-    @SuppressWarnings( {"MissingPermission"} )
+    @SuppressWarnings({"MissingPermission"})
     protected void onStart() {
         super.onStart();
         mapView.onStart();
@@ -230,7 +241,8 @@ public class DetailLaporan extends AppCompatActivity implements PermissionsListe
     }
 
     private final static int REQUEST_CODE_ASK_PERMISSIONS = 1002;
-    @SuppressLint( "MissingSuperCall" )
+
+    @SuppressLint("MissingSuperCall")
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode) {

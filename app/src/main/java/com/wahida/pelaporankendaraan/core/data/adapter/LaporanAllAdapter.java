@@ -3,7 +3,6 @@ package com.wahida.pelaporankendaraan.core.data.adapter;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,12 +21,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
 
-public class LaporanAdapter extends RecyclerView.Adapter<LaporanAdapter.HolderView> {
+public class LaporanAllAdapter extends RecyclerView.Adapter<LaporanAllAdapter.HolderView> {
 
     private Context context;
     private ArrayList<DataLaporan> listLaporan;
 
-    public LaporanAdapter(Context context, ArrayList<DataLaporan> listLaporan) {
+    public LaporanAllAdapter(Context context, ArrayList<DataLaporan> listLaporan) {
         this.context = context;
         this.listLaporan = listLaporan;
     }
@@ -36,7 +35,7 @@ public class LaporanAdapter extends RecyclerView.Adapter<LaporanAdapter.HolderVi
     @Override
     public HolderView onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.list_data_laporan, parent, false);
+                .inflate(R.layout.list_data_laporan_all, parent, false);
         return new HolderView(view);
     }
 
@@ -58,18 +57,12 @@ public class LaporanAdapter extends RecyclerView.Adapter<LaporanAdapter.HolderVi
         } else if (Objects.equals(laporan.getStatus(), "SELESAI")) {
             color = context.getColor(R.color.selesai);
             holder.keterangan_status.setVisibility(View.VISIBLE);
-            holder.txt_status.setText(laporan.getStatus());
             holder.keterangan_status.setText("Silahkan datang ke Kantor Polisi untuk tindakan selanjutnya!");
         } else if (Objects.equals(laporan.getStatus(), "MENUNGGU")) {
             holder.keterangan_status.setVisibility(View.GONE);
         }
         holder.txt_status.setTextColor(color);
 
-        holder.btn_detail.setOnClickListener(v -> {
-            Intent inte = new Intent(context, DetailLaporan.class);
-            inte.putExtra("id", String.valueOf(laporan.getId()));
-            context.startActivity(inte);
-        });
     }
 
     @Override
@@ -133,8 +126,7 @@ public class LaporanAdapter extends RecyclerView.Adapter<LaporanAdapter.HolderVi
 
     public class HolderView extends RecyclerView.ViewHolder {
 
-        private TextView txt_nama_pelapor, txt_keterangan, txt_tanggal, txt_id, txt_status, keterangan_status;
-        private CardView btn_detail;
+        private TextView txt_nama_pelapor, txt_keterangan, txt_tanggal, txt_id, txt_status,keterangan_status;
 
         public HolderView(@NonNull View itemView) {
             super(itemView);
@@ -142,7 +134,6 @@ public class LaporanAdapter extends RecyclerView.Adapter<LaporanAdapter.HolderVi
             txt_nama_pelapor = itemView.findViewById(R.id.nama_pelapor);
             txt_keterangan = itemView.findViewById(R.id.keterangan);
             txt_tanggal = itemView.findViewById(R.id.tanggal);
-            btn_detail = itemView.findViewById(R.id.btn_detail);
             txt_id = itemView.findViewById(R.id.id);
             txt_status = itemView.findViewById(R.id.status);
             keterangan_status = itemView.findViewById(R.id.keterangan_status);

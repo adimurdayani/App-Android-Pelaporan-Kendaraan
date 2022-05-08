@@ -60,4 +60,8 @@ dependencies {
     implementation 'com.github.Drjacky:ImagePicker:2.1.11'
     //    firebase
     implementation 'com.google.firebase:firebase-messaging:17.0.0'
+    // Image Circle
+    implementation 'com.mikhaellopez:circularimageview:4.3.0'
+    //search
+    implementation 'com.mapbox.mapboxsdk:mapbox-android-plugin-places-v9:0.12.0'
 }

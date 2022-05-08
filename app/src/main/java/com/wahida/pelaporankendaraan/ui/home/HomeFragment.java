@@ -2,9 +2,11 @@ package com.wahida.pelaporankendaraan.ui.home;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,10 +29,15 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.facebook.shimmer.ShimmerFrameLayout;
+import com.mikhaellopez.circularimageview.CircularImageView;
+import com.squareup.picasso.Picasso;
 import com.wahida.pelaporankendaraan.R;
+import com.wahida.pelaporankendaraan.SettingActivity;
 import com.wahida.pelaporankendaraan.core.data.adapter.LaporanAdapter;
+import com.wahida.pelaporankendaraan.core.data.adapter.LaporanAllAdapter;
 import com.wahida.pelaporankendaraan.core.data.model.DataLaporan;
 import com.wahida.pelaporankendaraan.core.data.network.APIUrl;
+import com.wahida.pelaporankendaraan.util.UrlImage;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -41,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
+import okhttp3.internal.Util;
 
 
 public class HomeFragment extends Fragment {
@@ -52,10 +60,11 @@ public class HomeFragment extends Fragment {
     private RecyclerView recyclerView;
     private SharedPreferences preferences;
     private RecyclerView.LayoutManager layoutManager;
-    private LaporanAdapter adapter;
+    private LaporanAllAdapter adapter;
     public static ArrayList<DataLaporan> listLaporan;
     private StringRequest getDataLaporan;
     private SearchView searchView;
+    CircularImageView img_user;
 
     public HomeFragment() {
 
@@ -74,7 +83,7 @@ public class HomeFragment extends Fragment {
 
     private void setDisplay() {
         Calendar calendar = Calendar.getInstance();
-        @SuppressLint( "SimpleDateFormat" )
+        @SuppressLint("SimpleDateFormat")
         SimpleDateFormat formatTanggal = new SimpleDateFormat("EEE, MMM yyyy");
         String tgl = formatTanggal.format(calendar.getTime());
         txt_tanggal.setText(tgl);
@@ -84,6 +93,7 @@ public class HomeFragment extends Fragment {
         recyclerView.setHasFixedSize(true);
 
         txt_nama.setText(preferences.getString("nama", ""));
+
         refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
@@ -103,6 +113,45 @@ public class HomeFragment extends Fragment {
                 return false;
             }
         });
+
+        btn_profile.setOnClickListener(v -> {
+            startActivity(new Intent(requireContext(), SettingActivity.class));
+        });
+    }
+
+    private void getImage() {
+        int id = preferences.getInt("id", 0);
+        getDataLaporan = new StringRequest(Request.Method.GET, APIUrl.GET_USER_ID + id, response -> {
+            try {
+                JSONObject object = new JSONObject(response);
+                if (object.getBoolean("status")) {
+                    JSONObject data = object.getJSONObject("data");
+                    String image = data.getString("image");
+                    Log.d("Response", "Image: " + image);
+                    Picasso.get()
+                            .load(UrlImage.BASE_URL_USERS + image)
+                            .error(R.drawable.user_circle)
+                            .placeholder(R.drawable.user_circle)
+                            .into(img_user);
+                } else {
+                    koneksiError(object.getString("message"));
+                }
+                frameLayout.stopShimmerAnimation();
+                frameLayout.setVisibility(View.GONE);
+            } catch (JSONException e) {
+                koneksiError(e.toString());
+            }
+            refreshLayout.setRefreshing(false);
+            frameLayout.stopShimmerAnimation();
+            frameLayout.setVisibility(View.GONE);
+        }, error -> {
+            refreshLayout.setRefreshing(false);
+            frameLayout.stopShimmerAnimation();
+            frameLayout.setVisibility(View.GONE);
+        });
+        setPolice();
+        RequestQueue koneksi = Volley.newRequestQueue(requireContext());
+        koneksi.add(getDataLaporan);
     }
 
     private void getDataLaporan() {
@@ -122,7 +171,7 @@ public class HomeFragment extends Fragment {
                         getLaporan.setStatus(getData.getString("status"));
                         listLaporan.add(getLaporan);
                     }
-                    adapter = new LaporanAdapter(getContext(), listLaporan);
+                    adapter = new LaporanAllAdapter(getContext(), listLaporan);
                     recyclerView.setAdapter(adapter);
                 } else {
                     koneksiError(object.getString("message"));
@@ -136,11 +185,9 @@ public class HomeFragment extends Fragment {
             frameLayout.stopShimmerAnimation();
             frameLayout.setVisibility(View.GONE);
         }, error -> {
-            koneksiError("Terjadi kesalahan koneksi!");
             refreshLayout.setRefreshing(false);
             frameLayout.stopShimmerAnimation();
             frameLayout.setVisibility(View.GONE);
-
         });
         setPolice();
         RequestQueue koneksi = Volley.newRequestQueue(requireContext());
@@ -185,6 +232,7 @@ public class HomeFragment extends Fragment {
         refreshLayout = view.findViewById(R.id.sw_data_laporan_baru);
         txt_tanggal = view.findViewById(R.id.tanggal);
         searchView = view.findViewById(R.id.searchData);
+        img_user = view.findViewById(R.id.img_user);
     }
 
     @Override
@@ -193,6 +241,7 @@ public class HomeFragment extends Fragment {
         refreshLayout.setRefreshing(true);
         frameLayout.startShimmerAnimation();
         getDataLaporan();
+        getImage();
     }
 
     @Override

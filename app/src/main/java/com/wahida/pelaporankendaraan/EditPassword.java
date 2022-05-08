@@ -41,18 +41,9 @@ public class EditPassword extends AppCompatActivity {
     private ImageView btn_back;
     private TextInputLayout l_password, l_conf_pass;
     private TextInputEditText edt_password, edt_conf_pass;
-    private CardView btn_simpan;
+    private LinearLayout btn_simpan;
     private String password, conf_pass;
     private SharedPreferences preferences;
-    public static final Pattern PASSWORD_FORMAT = Pattern.compile("^" +
-            "(?=.*[1-9])" + //harus menggunakan satu angka
-            "(?=.*[a-z])" + //harus menggunakan abjad
-            "(?=.*[A-Z])" + //harus menggunakan huruf kapital
-            "(?=.*[@#$%^&+=])" + //harus menggunakan sepesial karakter
-            "(?=\\S+$)" + // tidak menggunakan spasi
-            ".{6,}" + //harus lebih dari 6 karakter
-            "$"
-    );
     private StringRequest kirimData;
 
     @Override
@@ -76,8 +67,6 @@ public class EditPassword extends AppCompatActivity {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (edt_password.getText().toString().trim().isEmpty()) {
                     l_password.setErrorEnabled(false);
-                } else if (PASSWORD_FORMAT.matcher(edt_password.getText().toString().trim()).matches()) {
-                    l_password.setErrorEnabled(false);
                 }
             }
 
@@ -96,8 +85,6 @@ public class EditPassword extends AppCompatActivity {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (edt_conf_pass.getText().toString().trim().isEmpty()) {
-                    l_conf_pass.setErrorEnabled(false);
-                } else if (PASSWORD_FORMAT.matcher(edt_conf_pass.getText().toString().trim()).matches()) {
                     l_conf_pass.setErrorEnabled(false);
                 } else if (edt_conf_pass.getText().toString().trim().matches(edt_password.getText().toString().trim())) {
                     l_conf_pass.setErrorEnabled(false);
@@ -168,18 +155,10 @@ public class EditPassword extends AppCompatActivity {
             l_password.setErrorEnabled(true);
             l_password.setError("Password tidak boleh kosong!");
             return false;
-        } else if (!PASSWORD_FORMAT.matcher(password).matches()) {
-            l_password.setErrorEnabled(true);
-            l_password.setError("Password sangat lemah!");
-            return false;
         }
         if (conf_pass.isEmpty()) {
             l_conf_pass.setErrorEnabled(true);
             l_conf_pass.setError("Konfirmasi password tidak boleh kosong!");
-            return false;
-        } else if (!PASSWORD_FORMAT.matcher(conf_pass).matches()) {
-            l_conf_pass.setErrorEnabled(true);
-            l_conf_pass.setError("Konfirmasi password sangat lemah!");
             return false;
         } else if (!conf_pass.matches(password)) {
             l_conf_pass.setErrorEnabled(true);

@@ -6,9 +6,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SearchView;
 import android.widget.TextView;
@@ -28,11 +30,14 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.facebook.shimmer.ShimmerFrameLayout;
+import com.mikhaellopez.circularimageview.CircularImageView;
+import com.squareup.picasso.Picasso;
 import com.wahida.pelaporankendaraan.R;
 import com.wahida.pelaporankendaraan.TambahLaporan;
 import com.wahida.pelaporankendaraan.core.data.adapter.LaporanAdapter;
 import com.wahida.pelaporankendaraan.core.data.model.DataLaporan;
 import com.wahida.pelaporankendaraan.core.data.network.APIUrl;
+import com.wahida.pelaporankendaraan.util.UrlImage;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -44,7 +49,7 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 
 public class AddFragment extends Fragment {
     private View view;
-    private CardView btn_tambah;
+    private LinearLayout btn_tambah;
     private TextView txt_nama, jml_laporan;
     private SharedPreferences preferences;
     private ShimmerFrameLayout shimmer_layout;
@@ -56,6 +61,7 @@ public class AddFragment extends Fragment {
     private LaporanAdapter adapter;
     int id;
     private SearchView searchView;
+    CircularImageView img_user;
 
     public AddFragment() {
 
@@ -115,6 +121,38 @@ public class AddFragment extends Fragment {
         refreshLayout = view.findViewById(R.id.sw_data);
         searchView = view.findViewById(R.id.search);
         jml_laporan = view.findViewById(R.id.jml_laporan);
+        img_user = view.findViewById(R.id.img_user);
+    }
+
+    private void getImage() {
+        int id = preferences.getInt("id", 0);
+        refreshLayout.setRefreshing(true);
+        getDataLaporan = new StringRequest(Request.Method.GET, APIUrl.GET_USER_ID + id, response -> {
+            try {
+                JSONObject object = new JSONObject(response);
+                if (object.getBoolean("status")) {
+                    JSONObject data = object.getJSONObject("data");
+                    String image = data.getString("image");
+                    Log.d("Response", "Image: " + image);
+                    Picasso.get()
+                            .load(UrlImage.BASE_URL_USERS + image)
+                            .error(R.drawable.user_circle)
+                            .placeholder(R.drawable.user_circle)
+                            .into(img_user);
+                } else {
+                    koneksiError(object.getString("message"));
+                }
+                refreshLayout.setRefreshing(false);
+            } catch (JSONException e) {
+                koneksiError(e.toString());
+            }
+            refreshLayout.setRefreshing(false);
+        }, error -> {
+            refreshLayout.setRefreshing(false);
+        });
+        setPolice();
+        RequestQueue koneksi = Volley.newRequestQueue(requireContext());
+        koneksi.add(getDataLaporan);
     }
 
     @SuppressLint( "SetTextI18n" )
@@ -144,11 +182,13 @@ public class AddFragment extends Fragment {
                 }
             } catch (JSONException e) {
                 koneksiError(e.toString());
+                e.printStackTrace();
             }
             refreshLayout.setRefreshing(false);
             shimmer_layout.stopShimmerAnimation();
             shimmer_layout.setVisibility(View.GONE);
         }, error -> {
+            error.printStackTrace();
             refreshLayout.setRefreshing(false);
             shimmer_layout.stopShimmerAnimation();
             shimmer_layout.setVisibility(View.GONE);
@@ -193,6 +233,7 @@ public class AddFragment extends Fragment {
     public void onResume() {
         super.onResume();
         getdata();
+        getImage();
         shimmer_layout.startShimmerAnimation();
     }
 

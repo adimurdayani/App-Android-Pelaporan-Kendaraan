@@ -10,6 +10,7 @@ import androidx.fragment.app.FragmentManager;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -17,6 +18,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -46,8 +48,10 @@ import com.android.volley.RetryPolicy;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import com.google.gson.JsonObject;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.api.geocoding.v5.GeocodingCriteria;
@@ -55,8 +59,12 @@ import com.mapbox.api.geocoding.v5.MapboxGeocoding;
 import com.mapbox.api.geocoding.v5.models.CarmenFeature;
 import com.mapbox.api.geocoding.v5.models.GeocodingResponse;
 import com.mapbox.core.exceptions.ServicesException;
+import com.mapbox.geojson.Feature;
+import com.mapbox.geojson.FeatureCollection;
 import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.camera.CameraPosition;
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.location.LocationComponent;
 import com.mapbox.mapboxsdk.location.LocationComponentActivationOptions;
@@ -66,6 +74,8 @@ import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
+import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete;
+import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions;
 import com.mapbox.mapboxsdk.style.layers.Layer;
 import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
@@ -101,6 +111,7 @@ import static com.mapbox.mapboxsdk.style.layers.Property.VISIBLE;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconAllowOverlap;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconIgnorePlacement;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconImage;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconOffset;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.visibility;
 
 public class TambahLaporan extends AppCompatActivity implements PermissionsListener, OnMapReadyCallback {
@@ -108,15 +119,20 @@ public class TambahLaporan extends AppCompatActivity implements PermissionsListe
     private MapboxMap mapboxMap;
     private PermissionsManager permissionsManager;
     private ImageView hoveringMarker, image_stnk;
-    private CardView btn_ambil_latlit, upload_stnk;
+    private CardView upload_stnk;
     private TextInputLayout l_no_kk, l_no_ktp, l_nama, l_latitude, l_longitude, l_keternagan, l_no_ken;
     private TextInputEditText edt_no_kk, edt_no_ktp, edt_nama, edt_latitude, edt_longitude, edt_keterangan, edt_no_ken;
     private SearchableSpinner edt_kelamin, edt_kecamatan, edt_kelurahan;
     private LinearLayout btn_kirim;
-    private TextView text_tentukan_titik;
+    private FloatingActionButton btn_ambil_latlit;
     private String no_kk, no_ktp, nama, latitude, longitude, keterangan, kecamatan, kelurahan, kelamin, no_ken;
     private StringRequest kirimData;
     private static final String DROPPED_MARKER_LAYER_ID = "DROPPED_MARKER_LAYER_ID";
+    private static final int REQUEST_CODE_AUTOCOMPLETE = 1;
+    private CarmenFeature home;
+    private CarmenFeature work;
+    private String geojsonSourceLayerId = "geojsonSourceLayerId";
+    private String symbolIconId = "symbolIconId";
     private Layer droppedMarkerLayer;
     private ArrayList<String> listKecamatan;
     private ArrayList<Kecamatan> arrayList;
@@ -146,7 +162,30 @@ public class TambahLaporan extends AppCompatActivity implements PermissionsListe
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == kodeKamera && resultCode == RESULT_OK) {
+        if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_CODE_AUTOCOMPLETE) {
+            // Retrieve selected location's CarmenFeature
+            CarmenFeature selectedCarmenFeature = PlaceAutocomplete.getPlace(data);
+
+            if (mapboxMap != null) {
+                Style style = mapboxMap.getStyle();
+                if (style != null) {
+                    GeoJsonSource source = style.getSourceAs("dropped-marker-source-id");
+                    if (source != null) {
+                        source.setGeoJson(FeatureCollection.fromFeatures(
+                                new Feature[]{Feature.fromJson(selectedCarmenFeature.toJson())}));
+                    }
+
+// Move map camera to the selected location
+                    mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(
+                            new CameraPosition.Builder()
+                                    .target(new LatLng(((Point) selectedCarmenFeature.geometry()).latitude(),
+                                            ((Point) selectedCarmenFeature.geometry()).longitude()))
+                                    .zoom(14)
+                                    .build()), 4000);
+                }
+            }
+
+        } else if (requestCode == kodeKamera && resultCode == RESULT_OK) {
             Bundle extras = data.getExtras();
             bitmap = (Bitmap) extras.get("data");
             image_stnk.setImageBitmap(bitmap);
@@ -365,6 +404,8 @@ public class TambahLaporan extends AppCompatActivity implements PermissionsListe
             Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
                 startActivityForResult(takePictureIntent, kodeKamera);
+            } else {
+                koneksiError("Data anda belum lengkap!");
             }
         });
         btn_kirim.setOnClickListener(v -> {
@@ -380,11 +421,15 @@ public class TambahLaporan extends AppCompatActivity implements PermissionsListe
         dialog.show();
         kirimDataLaporan = new VolleyMultipartRequest(Request.Method.POST, APIUrl.GET_LAPORAN, response -> {
             try {
-                JSONObject object = new JSONObject(new String(response.data));
-                if (object.getBoolean("status")) {
-                    showDialog();
+                if (response.data == null) {
+                    koneksiError("Data anda masih kurang lengkap");
                 } else {
-                    koneksiError(object.getString("message"));
+                    JSONObject object = new JSONObject(new String(response.data));
+                    if (object.getBoolean("status")) {
+                        showDialog();
+                    } else {
+                        koneksiError(object.getString("message"));
+                    }
                 }
             } catch (JSONException e) {
                 koneksiError(e.toString());
@@ -394,6 +439,7 @@ public class TambahLaporan extends AppCompatActivity implements PermissionsListe
             dialog.dismissWithAnimation();
             error.printStackTrace();
             Log.d("Response", "Error: " + error.networkResponse);
+            koneksiError("Data anda tidak lengkap");
         }) {
             @Nullable
             @Override
@@ -420,7 +466,6 @@ public class TambahLaporan extends AppCompatActivity implements PermissionsListe
                 return params;
             }
         };
-        setPolice();
         RequestQueue koneksi = Volley.newRequestQueue(this);
         koneksi.add(kirimDataLaporan);
     }
@@ -459,7 +504,6 @@ public class TambahLaporan extends AppCompatActivity implements PermissionsListe
             dialog.dismissWithAnimation();
             Log.d("Response", "Error: " + error.networkResponse);
         });
-        setPolice();
         RequestQueue koneksi = Volley.newRequestQueue(this);
         koneksi.add(kirimData);
     }
@@ -503,7 +547,6 @@ public class TambahLaporan extends AppCompatActivity implements PermissionsListe
             dialog.dismissWithAnimation();
             Log.d("Response", "Error: " + error.networkResponse);
         });
-        setPolice();
         RequestQueue koneksi = Volley.newRequestQueue(this);
         koneksi.add(kirimData);
     }
@@ -567,7 +610,6 @@ public class TambahLaporan extends AppCompatActivity implements PermissionsListe
         btn_kirim = findViewById(R.id.btn_kirim);
         l_keternagan = findViewById(R.id.l_keterangan);
         edt_keterangan = findViewById(R.id.edt_keterangan);
-        text_tentukan_titik = findViewById(R.id.text_tentukan_titik);
         image_stnk = findViewById(R.id.image_stnk);
         l_no_ken = findViewById(R.id.l_no_ken);
         edt_no_ken = findViewById(R.id.edt_no_ken);
@@ -577,13 +619,18 @@ public class TambahLaporan extends AppCompatActivity implements PermissionsListe
     public void onMapReady(@NonNull MapboxMap mapboxMap) {
         TambahLaporan.this.mapboxMap = mapboxMap;
         mapboxMap.setStyle(Style.MAPBOX_STREETS, new Style.OnStyleLoaded() {
-            @SuppressLint( "SetTextI18n" )
+            @SuppressLint("SetTextI18n")
             @Override
             public void onStyleLoaded(@NonNull Style style) {
+
+                initSearchFab();
+
+                addUserLocations();
+
                 enableLocationPlugin(style);
                 Toast.makeText(TambahLaporan.this, "Drag untuk memilih lokasi", Toast.LENGTH_SHORT).show();
                 hoveringMarker = new ImageView(getApplication());
-                hoveringMarker.setImageResource(R.drawable.ic_marker);
+                hoveringMarker.setImageResource(R.drawable.map_default_map_marker);
                 FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
                         ViewGroup.LayoutParams.WRAP_CONTENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER
@@ -593,12 +640,10 @@ public class TambahLaporan extends AppCompatActivity implements PermissionsListe
                 mapView.addView(hoveringMarker);
                 initDroppedMarker(style);
                 btn_ambil_latlit.setOnClickListener(v -> {
+
                     if (hoveringMarker.getVisibility() == View.VISIBLE) {
                         final LatLng mapTargetLatLng = mapboxMap.getCameraPosition().target;
                         hoveringMarker.setVisibility(View.INVISIBLE);
-
-                        btn_ambil_latlit.setBackground(ContextCompat.getDrawable(TambahLaporan.this, R.drawable.btn_sign));
-                        text_tentukan_titik.setText("Select Location");
 
                         if (style.getLayer(DROPPED_MARKER_LAYER_ID) != null) {
                             GeoJsonSource source = style.getSourceAs("dropped-marker-source-id");
@@ -612,22 +657,54 @@ public class TambahLaporan extends AppCompatActivity implements PermissionsListe
                             droppedMarkerLayer = style.getLayer(DROPPED_MARKER_LAYER_ID);
                             if (droppedMarkerLayer != null) {
                                 droppedMarkerLayer.setProperties(visibility(VISIBLE));
+                                hoveringMarker.setVisibility(View.VISIBLE);
                             }
                         }
                         reverseGeocode(Point.fromLngLat(mapTargetLatLng.getLongitude(), mapTargetLatLng.getLatitude()));
                     } else {
-                        btn_ambil_latlit.setBackground(ContextCompat.getDrawable(TambahLaporan.this, R.drawable.btn_sign2));
-                        text_tentukan_titik.setText("Select a location");
-                        hoveringMarker.setVisibility(View.VISIBLE);
-
                         droppedMarkerLayer = style.getLayer(DROPPED_MARKER_LAYER_ID);
                         if (droppedMarkerLayer != null) {
-                            droppedMarkerLayer.setProperties(visibility(NONE));
+                            droppedMarkerLayer.setProperties(visibility(VISIBLE));
+                            hoveringMarker.setVisibility(View.VISIBLE);
                         }
                     }
                 });
             }
         });
+    }
+
+    private void initSearchFab() {
+        findViewById(R.id.fab_location_search).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new PlaceAutocomplete.IntentBuilder()
+                        .accessToken(Mapbox.getAccessToken() != null ? Mapbox.getAccessToken() : getString(R.string.mapbox_access_token))
+                        .placeOptions(PlaceOptions.builder()
+                                .backgroundColor(Color.parseColor("#EEEEEE"))
+                                .limit(10)
+                                .addInjectedFeature(home)
+                                .addInjectedFeature(work)
+                                .build(PlaceOptions.MODE_CARDS))
+                        .build(TambahLaporan.this);
+                startActivityForResult(intent, REQUEST_CODE_AUTOCOMPLETE);
+            }
+        });
+    }
+
+    private void addUserLocations() {
+        home = CarmenFeature.builder().text("Mapbox SF Office")
+                .geometry(Point.fromLngLat(-122.3964485, 37.7912561))
+                .placeName("50 Beale St, San Francisco, CA")
+                .id("mapbox-sf")
+                .properties(new JsonObject())
+                .build();
+
+        work = CarmenFeature.builder().text("Mapbox DC Office")
+                .placeName("740 15th Street NW, Washington DC")
+                .geometry(Point.fromLngLat(-77.0338348, 38.899750))
+                .id("mapbox-dc")
+                .properties(new JsonObject())
+                .build();
     }
 
     @Override
@@ -667,7 +744,7 @@ public class TambahLaporan extends AppCompatActivity implements PermissionsListe
     }
 
     @Override
-    @SuppressWarnings( {"MissingPermission"} )
+    @SuppressWarnings({"MissingPermission"})
     protected void onStart() {
         super.onStart();
         mapView.onStart();
@@ -733,8 +810,6 @@ public class TambahLaporan extends AppCompatActivity implements PermissionsListe
                                     }
                                 }
                             });
-                        } else {
-                            Toast.makeText(TambahLaporan.this, "Lokasi tidak ditemukan", Toast.LENGTH_SHORT).show();
                         }
                     }
                 }
@@ -750,7 +825,7 @@ public class TambahLaporan extends AppCompatActivity implements PermissionsListe
         }
     }
 
-    @SuppressWarnings( ("MissingPermission") )
+    @SuppressWarnings(("MissingPermission"))
     private void enableLocationPlugin(@NonNull Style loadedMapStyle) {
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
 
@@ -772,7 +847,7 @@ public class TambahLaporan extends AppCompatActivity implements PermissionsListe
 
     private final static int REQUEST_CODE_ASK_PERMISSIONS = 1002;
 
-    @SuppressLint( "MissingSuperCall" )
+    @SuppressLint("MissingSuperCall")
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode) {
@@ -785,28 +860,6 @@ public class TambahLaporan extends AppCompatActivity implements PermissionsListe
             default:
                 super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         }
-    }
-
-    private void setPolice() {
-        kirimData.setRetryPolicy(new RetryPolicy() {
-            @Override
-            public int getCurrentTimeout() {
-                return 2000;
-            }
-
-            @Override
-            public int getCurrentRetryCount() {
-                return 2000;
-            }
-
-            @Override
-            public void retry(VolleyError error) throws VolleyError {
-                if (Looper.myLooper() == null) {
-                    Looper.prepare();
-                    koneksiError("Koneksi gagal");
-                }
-            }
-        });
     }
 
     private void showDialog() {

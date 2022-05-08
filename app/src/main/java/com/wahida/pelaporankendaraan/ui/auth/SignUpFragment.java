@@ -11,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -44,18 +45,9 @@ public class SignUpFragment extends Fragment {
 
     private View view;
     private ImageView btn_back;
-    private CardView btn_register;
+    private LinearLayout btn_register;
     private TextView txt_nama, txt_username, txt_email, txt_password, txt_confim;
     private TextInputLayout l_nama, l_username, l_email, l_password, l_confirm;
-    public static final Pattern PASSWORD_FORMAT = Pattern.compile("^" +
-            "(?=.*[1-9])" + //harus menggunakan satu angka
-            "(?=.*[a-z])" + //harus menggunakan abjad
-            "(?=.*[A-Z])" + //harus menggunakan huruf kapital
-            "(?=.*[@#$%^&+=])" + //harus menggunakan sepesial karakter
-            "(?=\\S+$)" + // tidak menggunakan spasi
-            ".{6,}" + //harus lebih dari 6 karakter
-            "$"
-    );
     private StringRequest userRegist;
     private String nama, email, username, password, conf_pass, token;
     private ProgressDialog dialog;
@@ -232,8 +224,6 @@ public class SignUpFragment extends Fragment {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (txt_password.getText().toString().trim().isEmpty()) {
                     l_password.setErrorEnabled(false);
-                } else if (PASSWORD_FORMAT.matcher(txt_password.getText().toString().trim()).matches()) {
-                    l_password.setErrorEnabled(false);
                 }
             }
 
@@ -252,8 +242,6 @@ public class SignUpFragment extends Fragment {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (txt_confim.getText().toString().trim().isEmpty()) {
-                    l_confirm.setErrorEnabled(false);
-                } else if (PASSWORD_FORMAT.matcher(txt_confim.getText().toString().trim()).matches()) {
                     l_confirm.setErrorEnabled(false);
                 } else if (txt_confim.getText().toString().trim().matches(txt_password.getText().toString().trim())) {
                     l_confirm.setErrorEnabled(false);
@@ -296,19 +284,11 @@ public class SignUpFragment extends Fragment {
             l_password.setErrorEnabled(true);
             l_password.setError("Password tidak boleh kosong!");
             return false;
-        } else if (!PASSWORD_FORMAT.matcher(password).matches()) {
-            l_password.setErrorEnabled(true);
-            l_password.setError("Password sangat lemah!");
-            return false;
         }
 
         if (conf_pass.isEmpty()) {
             l_confirm.setErrorEnabled(true);
             l_confirm.setError("Konfirmasi password tidak boleh kosong!");
-            return false;
-        } else if (!PASSWORD_FORMAT.matcher(conf_pass).matches()) {
-            l_confirm.setErrorEnabled(true);
-            l_confirm.setError("Konfirmasi password sangat lemah!");
             return false;
         } else if (!conf_pass.matches(password)) {
             l_confirm.setErrorEnabled(true);

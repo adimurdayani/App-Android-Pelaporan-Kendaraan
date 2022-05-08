@@ -1,10 +1,12 @@
 package com.wahida.pelaporankendaraan.ui.profile;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,11 +25,16 @@ import com.android.volley.RetryPolicy;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.mikhaellopez.circularimageview.CircularImageView;
+import com.squareup.picasso.Picasso;
 import com.wahida.pelaporankendaraan.EditPassword;
+import com.wahida.pelaporankendaraan.EditProfile;
 import com.wahida.pelaporankendaraan.LoginActivity;
 import com.wahida.pelaporankendaraan.R;
+import com.wahida.pelaporankendaraan.UploadActivity;
 import com.wahida.pelaporankendaraan.core.data.network.APIUrl;
 import com.wahida.pelaporankendaraan.ui.home.HomeFragment;
+import com.wahida.pelaporankendaraan.util.UrlImage;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -39,7 +46,10 @@ public class ProfileFragment extends Fragment {
     private TextView nama, email, txt_jmlterkirim, txt_jmldiproses;
     private CardView btn_logout, btn_edit;
     private SharedPreferences preferences;
+    CircularImageView img_user;
     private StringRequest logout;
+    private StringRequest getDataLaporan;
+    ImageView btn_editprofile;
 
     public ProfileFragment() {
 
@@ -47,7 +57,8 @@ public class ProfileFragment extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.fragment_profile, container, false);
         preferences = requireContext().getSharedPreferences("user", Context.MODE_PRIVATE);
         init();
@@ -73,6 +84,13 @@ public class ProfileFragment extends Fragment {
         btn_edit.setOnClickListener(v -> {
             startActivity(new Intent(requireContext(), EditPassword.class));
         });
+
+        img_user.setOnClickListener(v -> {
+            startActivity(new Intent(requireContext(), UploadActivity.class));
+        });
+        btn_editprofile.setOnClickListener(v -> {
+            startActivity(new Intent(requireContext(), EditProfile.class));
+        });
     }
 
     private void showDialog() {
@@ -86,6 +104,74 @@ public class ProfileFragment extends Fragment {
                 .setCancelText("Tidak")
                 .setCancelClickListener(SweetAlertDialog::dismissWithAnimation)
                 .show();
+    }
+
+    private void getImage() {
+        int id = preferences.getInt("id", 0);
+        getDataLaporan = new StringRequest(Request.Method.GET, APIUrl.GET_USER_ID + id, response -> {
+            try {
+                JSONObject object = new JSONObject(response);
+                if (object.getBoolean("status")) {
+                    JSONObject data = object.getJSONObject("data");
+                    String image = data.getString("image");
+                    Log.d("Response", "Image: " + image);
+                    Picasso.get()
+                            .load(UrlImage.BASE_URL_USERS + image)
+                            .error(R.drawable.user_circle)
+                            .placeholder(R.drawable.user_circle)
+                            .into(img_user);
+                } else {
+                    koneksiError(object.getString("message"));
+                }
+            } catch (JSONException e) {
+                koneksiError(e.toString());
+            }
+        }, Throwable::printStackTrace);
+        RequestQueue koneksi = Volley.newRequestQueue(requireContext());
+        koneksi.add(getDataLaporan);
+    }
+
+    @SuppressLint("SetTextI18n")
+    private void getTotalselesai() {
+        int id = preferences.getInt("id", 0);
+        getDataLaporan = new StringRequest(Request.Method.GET, APIUrl.GET_TOTALSELESAI + id, response -> {
+            try {
+                JSONObject object = new JSONObject(response);
+                if (object.getBoolean("status")) {
+                    object.getInt("data");
+                    Log.d("Response", "data " + object.getInt("data"));
+                    txt_jmldiproses.setText("" + object.getInt("data"));
+                } else {
+                    koneksiError(object.getString("message"));
+                }
+            } catch (JSONException e) {
+                koneksiError(e.toString());
+            }
+        }, Throwable::printStackTrace);
+        RequestQueue koneksi = Volley.newRequestQueue(requireContext());
+        koneksi.add(getDataLaporan);
+    }
+
+    @SuppressLint("SetTextI18n")
+    private void getTotalmenunggu() {
+        int id = preferences.getInt("id", 0);
+        getDataLaporan = new StringRequest(Request.Method.GET, APIUrl.GET_TOTALMENUNGGU + id, response -> {
+            try {
+                JSONObject object = new JSONObject(response);
+                if (object.getBoolean("status")) {
+                    object.getInt("data");
+                    Log.d("Response", "data " + object.getInt("data"));
+                    txt_jmlterkirim.setText("" + object.getInt("data"));
+
+                } else {
+                    koneksiError(object.getString("message"));
+                }
+            } catch (JSONException e) {
+                koneksiError(e.toString());
+            }
+        }, Throwable::printStackTrace);
+        RequestQueue koneksi = Volley.newRequestQueue(requireContext());
+        koneksi.add(getDataLaporan);
     }
 
     private void logout() {
@@ -161,5 +247,15 @@ public class ProfileFragment extends Fragment {
         txt_jmldiproses = view.findViewById(R.id.jmlh_diproses);
         txt_jmlterkirim = view.findViewById(R.id.jmlh_terkirim);
         btn_edit = view.findViewById(R.id.btn_edit);
+        img_user = view.findViewById(R.id.img_user);
+        btn_editprofile = view.findViewById(R.id.btn_editprofile);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        getImage();
+        getTotalselesai();
+        getTotalmenunggu();
     }
 }
